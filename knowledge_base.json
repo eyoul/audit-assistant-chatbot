@@ -1,0 +1,21 @@
+{
+    "pdfs": [
+      {
+        "content": "Text from sample.pdf...",
+        "metadata": {
+          "filename": "sample.pdf",
+          "type": "pdf"
+        }
+      }
+    ],
+    "vectordb": [
+      {
+        "content": "Chunk of text from sample.pdf...",
+        "metadata": {
+          "filename": "sample.pdf",
+          "type": "pdf"
+        },
+        "id": "uuid-1234..."
+      }
+    ]
+  }
