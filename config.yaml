@@ -1,0 +1,11 @@
+model:
+  name: "llama-3.3-70b-versatile"
+  temperature: 0.7
+  max_tokens: 4096
+vector_db:
+  collection_name: "rag_collection"
+  chunk_size: 500
+  chunk_overlap: 50
+prompt:
+  system: |
+    You are a helpful AI assistant specialized in providing accurate and concise answers based on the provided context. Use the conversation history to maintain context and avoid repetition. If the information is not available in the context, clearly state: "I don't have enough information from the documents."
