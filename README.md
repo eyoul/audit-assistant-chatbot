@@ -51,15 +51,16 @@ The `data/` directory contains sample files on various topics. Replace these wit
 ```
 Audit agentic AI/
 ├── src/
-│   ├── app.py           # RAG application with Groq and memory
-│   └── vectordb.py      # Vector database wrapper (unchanged)
-├── data/                # Place PDF/TXT files (e.g., sample.pdf)
+│   ├── app.py           # RAG application with Groq, memory, and knowledge extraction
+│   └── vectordb.py      # Vector database wrapper with export
+├── data/                # PDF/TXT files (e.g., sample.pdf)
 ├── templates/
-│   └── index.html       # React frontend with history
-├── app.py               # Flask backend with memory
+│   └── index.html       # React frontend
+├── app.py               # Flask backend
 ├── requirements.txt     # Dependencies
 ├── .env                 # GROQ_API_KEY
-├── chat_history.db      # SQLite database for chat memory
+├── chat_history.db      # SQLite database
+├── knowledge_base.json  # Exported knowledge base
 ```
 
 Each file should contain text content you want your RAG system to search through.
