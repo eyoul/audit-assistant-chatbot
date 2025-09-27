@@ -7,6 +7,9 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+    <!-- Markdown renderer and sanitizer for professional formatting -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
@@ -17,8 +20,51 @@
             const [input, setInput] = React.useState('');
             const [isLoading, setIsLoading] = React.useState(false);
             const [sessionId, setSessionId] = React.useState(null);
+            const MAX_MESSAGES = 50; // sliding window size
+            const endRef = React.useRef(null);
 
-            // Load conversation history on mount
+            const scrollToBottom = () => {
+                if (endRef.current) {
+                    endRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            // Build Q/A pairs for sidebar history
+            const pairs = React.useMemo(() => {
+                const res = [];
+                let pending = null;
+                for (const m of messages) {
+                    if (m.sender === 'user' || m.sender === 'human') {
+                        // start a new pending question
+                        pending = { q: m.text, a: null, sources: null };
+                    } else if (m.sender === 'bot') {
+                        if (pending && !pending.a) {
+                            pending.a = m.text;
+                            pending.sources = m.sources || null;
+                            res.push(pending);
+                            pending = null;
+                        } else {
+                            // bot message without a preceding user question
+                            res.push({ q: null, a: m.text, sources: m.sources || null });
+                        }
+                    }
+                }
+                if (pending) {
+                    // keep the last unanswered question visible
+                    res.push(pending);
+                }
+                return res.slice(-MAX_MESSAGES);
+            }, [messages]);
+
+            // On mount: restore sessionId from localStorage
+            React.useEffect(() => {
+                const stored = window.localStorage.getItem('rag_session_id');
+                if (stored && !sessionId) {
+                    setSessionId(stored);
+                }
+            }, []);
+
+            // Load conversation history when sessionId becomes available
             React.useEffect(() => {
                 const loadHistory = async () => {
                     try {
@@ -30,11 +76,12 @@
                         if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
                         const data = await response.json();
                         if (data.history) {
-                            setMessages(data.history.map(msg => ({
+                            const mapped = data.history.map(msg => ({
                                 sender: msg.role,
                                 text: msg.content,
                                 sources: msg.role === 'assistant' ? 'From history' : null
-                            })));
+                            }));
+                            setMessages(() => mapped.slice(-MAX_MESSAGES));
                         }
                     } catch (error) {
                         console.error('Error loading history:', error);
@@ -43,11 +90,19 @@
                 if (sessionId) loadHistory();
             }, [sessionId]);
 
+            // Auto-scroll whenever messages change
+            React.useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
             const sendMessage = async () => {
                 if (!input.trim()) return;
                 setIsLoading(true);
                 const userMessage = { sender: 'user', text: input };
-                setMessages([...messages, userMessage]);
+                setMessages(prev => {
+                    const updated = [...prev, userMessage];
+                    return updated.slice(-MAX_MESSAGES);
+                });
 
                 try {
                     const response = await fetch('/api/query', {
@@ -68,14 +123,21 @@
                         text: data.answer || 'No response received',
                         sources
                     };
-                    setMessages(prev => [...prev, botMessage]);
+                    setMessages(prev => {
+                        const updated = [...prev, botMessage];
+                        return updated.slice(-MAX_MESSAGES);
+                    });
                     if (data.session_id && !sessionId) {
                         setSessionId(data.session_id);
+                        window.localStorage.setItem('rag_session_id', data.session_id);
                     }
                 } catch (error) {
                     console.error('Error:', error);
                     const errorMessage = { sender: 'bot', text: 'Sorry, something went wrong.' };
-                    setMessages(prev => [...prev, errorMessage]);
+                    setMessages(prev => {
+                        const updated = [...prev, errorMessage];
+                        return updated.slice(-MAX_MESSAGES);
+                    });
                 }
 
                 setInput('');
@@ -89,38 +151,87 @@
             };
 
             return (
-                <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-6">
-                    <h1 className="text-2xl font-bold text-center mb-4">Audit Agentic AI Chatbot</h1>
-                    <div className="h-96 overflow-y-auto mb-4 p-4 border rounded-lg bg-gray-50">
-                        {messages.map((msg, index) => (
-                            <div key={index} className={`mb-2 ${msg.sender === 'user' || msg.sender === 'human' ? 'text-right' : 'text-left'}`}>
-                                <span className={`inline-block p-2 rounded-lg ${msg.sender === 'user' || msg.sender === 'human' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
-                                    {msg.text}
-                                    {msg.sender === 'bot' && msg.sources && (
-                                        <div className="text-xs text-gray-500 mt-1">Sources: {msg.sources}</div>
+                <div className="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Sidebar: Previous Q/A pairs */}
+                    <aside className="md:col-span-1 bg-white rounded-lg shadow p-4 h-[32rem] overflow-y-auto border">
+                        <h2 className="text-lg font-semibold mb-3">History</h2>
+                        {pairs.length === 0 && (
+                            <div className="text-sm text-gray-500">No history yet</div>
+                        )}
+                        <ul className="space-y-2">
+                            {pairs.map((p, idx) => (
+                                <li key={idx} className="p-2 rounded border hover:bg-gray-50 cursor-pointer" onClick={() => { if (p.q) setInput(p.q); }}>
+                                    {p.q && (
+                                        <div className="text-sm">
+                                            <span className="font-medium text-gray-800">Q:</span>
+                                            <span className="text-gray-700"> {p.q.length > 80 ? p.q.slice(0,80)+"…" : p.q}</span>
+                                        </div>
                                     )}
-                                </span>
-                            </div>
-                        ))}
+                                    {p.a && (
+                                        <div className="text-xs mt-1 text-gray-600">
+                                            <span className="font-medium">A:</span>
+                                            <span> {p.a.length > 100 ? p.a.slice(0,100)+"…" : p.a}</span>
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </aside>
+
+                    {/* Main chat pane */}
+                    <div className="md:col-span-2 bg-white rounded-lg shadow-lg p-6">
+                        <h1 className="text-2xl font-bold text-center mb-4">Audit Agentic AI Chatbot</h1>
+                        <div className="h-96 overflow-y-auto mb-4 p-4 border rounded-lg bg-gray-50">
+                            {messages.map((msg, index) => {
+                                const isUser = msg.sender === 'user' || msg.sender === 'human';
+                                // For bot: render Markdown + sanitize. For user: plain text with preserved line breaks.
+                                let botHtml = null;
+                                if (!isUser) {
+                                    try {
+                                        const raw = window.marked ? window.marked.parse(msg.text || '') : (msg.text || '');
+                                        botHtml = window.DOMPurify ? window.DOMPurify.sanitize(raw) : raw;
+                                    } catch (e) {
+                                        botHtml = msg.text || '';
+                                    }
+                                }
+                                return (
+                                    <div key={index} className={`mb-3 ${isUser ? 'text-right' : 'text-left'}`}>
+                                        {isUser ? (
+                                            <div className="inline-block max-w-full md:max-w-[80%] bg-blue-500 text-white p-3 rounded-lg whitespace-pre-wrap leading-relaxed shadow">
+                                                {msg.text}
+                                            </div>
+                                        ) : (
+                                            <div className="inline-block max-w-full md:max-w-[80%] bg-white text-gray-800 p-3 rounded-lg border leading-relaxed shadow">
+                                                <div className="prose prose-sm max-w-none whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: botHtml }} />
+                                                {msg.sources && (
+                                                    <div className="text-xs text-gray-500 mt-2">Sources: {msg.sources}</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            <div ref={endRef} />
+                        </div>
                         {isLoading && <div className="text-center text-gray-500">Loading...</div>}
-                    </div>
-                    <div className="flex">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Ask a question..."
-                            disabled={isLoading}
-                        />
-                        <button
-                            onClick={sendMessage}
-                            className="p-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 disabled:bg-blue-300"
-                            disabled={isLoading}
-                        >
-                            Send
-                        </button>
+                        <div className="flex">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Ask a question..."
+                                disabled={isLoading}
+                            />
+                            <button
+                                onClick={sendMessage}
+                                className="p-2 bg-blue-500 text-white rounded-r-lg hover:bg-blue-600 disabled:bg-blue-300"
+                                disabled={isLoading}
+                            >
+                                Send
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
