@@ -3,6 +3,7 @@
 > Production-ready RAG assistant with Flask backend, React front-end (vanilla + CDN), Groq LLM, Chroma vector DB, and SQLite chat memory. Configurable via `config.yaml`. Supports knowledge export to JSON.
 
 ## Key Features
+
 - **Document ingestion** from `data/` (PDF and TXT)
 - **Configurable chunking** via `config.yaml` (`chunk_size`, `chunk_overlap`)
 - **Vector search** using Chroma with SentenceTransformer embeddings
@@ -12,6 +13,7 @@
 - **Front-end UX**: history sidebar, sliding window trimming, auto-scroll, session persistence, Markdown rendering, Tailwind UI
 
 ## Project Structure
+
 ```
 Audit agentic AI/
 ├── src/
@@ -29,10 +31,12 @@ Audit agentic AI/
 ```
 
 ## Requirements
+
 - Python 3.10.x (recommended on Windows for PyTorch + NumPy compatibility)
 - A Groq API key: set `GROQ_API_KEY` in `.env`
 
 ## Setup
+
 1. Create and activate a virtual environment (Python 3.10):
 ```bash
 py -3.10 -m venv .venv
@@ -66,6 +70,7 @@ prompt:
 5. Add documents to `data/` (PDF or TXT)
 
 ## Run
+
 ```bash
 python app.py
 ```
@@ -83,6 +88,7 @@ Open http://localhost:5000
   - exports PDFs and vector DB contents to `knowledge_base.json`
 
 ## Front-end Highlights (`templates/index.html`)
+
 - **History sidebar** lists recent Q/A pairs (sliding window)
 - **Session persistence** via `localStorage` (session_id reuse)
 - **Auto-scroll** to latest message
@@ -90,10 +96,12 @@ Open http://localhost:5000
 - **Tailwind**-styled layout; CDN is fine for dev (use CLI/PostCSS in prod)
 
 ## Notes for Windows
+
 - The project pins versions to avoid NumPy 2/PyTorch issues on Python 3.10.
 - `uvloop` is disabled on Windows via environment markers.
 
 ## Exporting Knowledge
+
 - Hit `GET /api/export_knowledge` to write a consolidated `knowledge_base.json` containing:
   - `pdfs`: parsed text and metadata from `data/`
   - `vectordb`: all chunks + metadata + ids from Chroma
