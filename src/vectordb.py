@@ -1,12 +1,17 @@
 import uuid
+import hashlib
 from typing import List, Dict, Any
 import chromadb
 from chromadb.utils import embedding_functions
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 class VectorDB:
-    def __init__(self, collection_name: str = "rag_collection", chunk_size: int = 500, chunk_overlap: int = 50):
-        self.client = chromadb.Client()
+    def __init__(self, collection_name: str = "rag_collection", chunk_size: int = 500, chunk_overlap: int = 50, persist_directory: str | None = None):
+        # Use on-disk Chroma if a persist directory is provided; otherwise use in-memory
+        if persist_directory:
+            self.client = chromadb.PersistentClient(path=persist_directory)
+        else:
+            self.client = chromadb.Client()
         self.embedding_model = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
@@ -53,14 +58,32 @@ class VectorDB:
             for i, chunk in enumerate(chunks):
                 all_chunks.append(chunk)
                 all_metadatas.append(metadata)
-                all_ids.append(str(uuid.uuid4()))
+                # Deterministic ID from content + filename + index to avoid duplicates across restarts
+                base = f"{metadata.get('filename','')}-{i}-{len(chunk)}-{hashlib.md5(chunk.encode('utf-8')).hexdigest()}"
+                all_ids.append(base)
 
         if all_chunks:
-            self.collection.add(
-                documents=all_chunks,
-                metadatas=all_metadatas,
-                ids=all_ids
-            )
+            # Use upsert to avoid duplicate key errors and ensure idempotent ingestion
+            if hasattr(self.collection, 'upsert'):
+                self.collection.upsert(
+                    documents=all_chunks,
+                    metadatas=all_metadatas,
+                    ids=all_ids
+                )
+            else:
+                self.collection.add(
+                    documents=all_chunks,
+                    metadatas=all_metadatas,
+                    ids=all_ids
+                )
+
+    def is_empty(self) -> bool:
+        try:
+            return self.collection.count() == 0
+        except Exception:
+            # Fallback: treat as not empty if count is unavailable
+            results = self.collection.get(include=["ids"])  # may be large on huge sets
+            return len(results.get('ids', [])) == 0
 
     def search(self, query: str, n_results: int = 5) -> Dict[str, Any]:
         """
