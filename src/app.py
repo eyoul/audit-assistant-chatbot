@@ -6,7 +6,6 @@ from typing import List, Dict, Any
 from datetime import datetime
 from PyPDF2 import PdfReader
 from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
 from langchain_groq import ChatGroq
 from src.vectordb import VectorDB
 from dotenv import load_dotenv
@@ -64,12 +63,19 @@ class RAGApplication:
             self.vector_db = VectorDB(
                 collection_name=self.config['vector_db']['collection_name'],
                 chunk_size=self.config['vector_db']['chunk_size'],
-                chunk_overlap=self.config['vector_db']['chunk_overlap']
+                chunk_overlap=self.config['vector_db']['chunk_overlap'],
+                persist_directory=self.config['vector_db'].get('persist_directory')
             )
             print("Loading documents...")
             self.documents = self.load_documents()
             print(f"Loaded {len(self.documents)} documents")
-            self.vector_db.add_documents(self.documents)
+            # Only ingest if collection is empty to avoid duplications across restarts
+            if self.vector_db.is_empty():
+                print("VectorDB empty. Ingesting documents into Chroma...")
+                self.vector_db.add_documents(self.documents)
+                print("Ingestion complete.")
+            else:
+                print("VectorDB already populated; skipping ingestion.")
             
             print("Initializing Groq LLM...")
             groq_api_key = os.getenv("GROQ_API_KEY")
@@ -100,7 +106,9 @@ class RAGApplication:
                 """
             )
             
-            self.chain = LLMChain(llm=self.llm, prompt=self.prompt_template)
+            # Use RunnableSequence instead of deprecated LLMChain
+            # Equivalent of: chain = prompt | llm
+            self.chain = self.prompt_template | self.llm
             print("RAGApplication initialized successfully")
         except Exception as e:
             print(f"Error initializing RAGApplication: {str(e)}")
@@ -174,9 +182,13 @@ class RAGApplication:
                 'history': history_text,
                 'question': question
             })
-            memory.save_message("assistant", response['text'])
+            # RunnableSequence returns a message-like object; extract string content
+            answer_text = getattr(response, 'content', None) or response
+            if isinstance(answer_text, dict) and 'text' in answer_text:
+                answer_text = answer_text['text']
+            memory.save_message("assistant", answer_text)
             return {
-                'answer': response['text'],
+                'answer': answer_text,
                 'context': search_results['documents'],
                 'metadata': [m['filename'] for m in search_results['metadatas']]
             }
