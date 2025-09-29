@@ -1,3 +1,5 @@
+"""RAG-based Audit Assistant - Core application module."""
+
 import os
 import json
 import sqlite3
@@ -10,16 +12,25 @@ from langchain_groq import ChatGroq
 from src.vectordb import VectorDB
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
 class DatabaseChatMemory:
-    def __init__(self, user_id, session_id, db_path):
+    """Manages chat message storage and retrieval using SQLite."""
+    
+    def __init__(self, user_id: str, session_id: str, db_path: str):
+        """Initialize with user, session, and database path."""
         self.user_id = user_id
         self.session_id = session_id
         self.db_path = db_path
 
-    def save_message(self, role: str, content: str):
-        """Save a single message to the database."""
+    def save_message(self, role: str, content: str) -> None:
+        """Save message to database with timestamp.
+        
+        Args:
+            role: 'user' or 'assistant'
+            content: Message text
+        """
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 INSERT INTO chat_messages (user_id, session_id, role, content, timestamp)
@@ -27,8 +38,12 @@ class DatabaseChatMemory:
             """, (self.user_id, self.session_id, role, content, datetime.now()))
             conn.commit()
 
-    def load_conversation(self) -> list:
-        """Load the full conversation in order."""
+    def load_conversation(self) -> List[Dict[str, str]]:
+        """Load conversation history.
+        
+        Returns:
+            List of messages with role and content
+        """
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
                 SELECT role, content FROM chat_messages
@@ -38,7 +53,10 @@ class DatabaseChatMemory:
             return [{"role": row[0], "content": row[1]} for row in cursor.fetchall()]
 
 class RAGApplication:
-    def __init__(self, db_path="chat_history.db", config_path="config.yaml"):
+    """Main application class for RAG-based question answering."""
+    
+    def __init__(self, db_path: str = "chat_history.db", config_path: str = "config.yaml"):
+        """Initialize with database and config paths."""
         try:
             print("Loading configuration...")
             with open(config_path, 'r', encoding='utf-8') as f:
@@ -115,8 +133,10 @@ class RAGApplication:
             raise
 
     def load_documents(self) -> List[Dict[str, Any]]:
-        """
-        Load documents from the data/ directory, supporting PDF and text files.
+        """Load and process documents from data/ directory.
+        
+        Returns:
+            List of documents with content and metadata
         """
         data_dir = "data/"
         results = []
@@ -158,17 +178,16 @@ class RAGApplication:
         return results
 
     def query(self, question: str, user_id: str, session_id: str, n_results: int = 3) -> Dict[str, Any]:
-        """
-        Answer questions using retrieved context and conversation history.
-
+        """Process user query and generate response.
+        
         Args:
             question: User's question
-            user_id: Unique user identifier
-            session_id: Unique session identifier
-            n_results: Number of context chunks to retrieve
-
+            user_id: User identifier
+            session_id: Session identifier
+            n_results: Number of context chunks to use
+            
         Returns:
-            Dictionary with answer and context information
+            Dict with answer, context, and metadata
         """
         try:
             memory = DatabaseChatMemory(user_id, session_id, self.db_path)
@@ -196,15 +215,11 @@ class RAGApplication:
             print(f"Error processing query: {str(e)}")
             raise
 
-    def export_knowledge_base(self, output_file: str = "knowledge_base.json"):
-        """
-        Export knowledge base from PDFs and vector database to a JSON file.
-
+    def export_knowledge_base(self, output_file: str = "knowledge_base.json") -> None:
+        """Export current knowledge base to JSON.
+        
         Args:
-            output_file: Path to save the JSON file
-
-        Returns:
-            None
+            output_file: Path to save JSON output
         """
         try:
             knowledge_base = {
