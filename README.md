@@ -35,7 +35,7 @@ Audit agentic AI/
 ## Requirements
 
 - Python 3.10.x (recommended on Windows for PyTorch + NumPy compatibility)
-- A Groq API key: set `GROQ_API_KEY` in `.env`
+- A API key: eg:- set `GROQ_API_KEY` in `.env`
 
 ## Setup
 
