@@ -1,4 +1,6 @@
-# Audit Agentic AI – RAG Assistant
+# Audit Assistant Chatbot
+
+## Agentic AI – RAG Assistant
 
 > Production-ready RAG assistant with Flask backend, React front-end (vanilla + CDN), Groq LLM, Chroma vector DB, and SQLite chat memory. Configurable via `config.yaml`. Supports knowledge export to JSON.
 
