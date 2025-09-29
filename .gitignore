@@ -2,7 +2,9 @@
 venv/
 .venv/
 
+chat_history.db
 
+*.db
 # Environment variables
 .env
 
@@ -43,5 +45,4 @@ chroma_db/
 Thumbs.db
 
 lesson.md
-chat_history.db
-*.db
+
