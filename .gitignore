@@ -2,9 +2,9 @@
 venv/
 .venv/
 
-chat_history.db
+# chat_history.db
 
-*.db
+# *.db
 # Environment variables
 .env
 
