@@ -137,4 +137,10 @@ if __name__ == '__main__':
     # - debug=True enables auto-reload and debug mode
     # - host='0.0.0.0' makes the server accessible from other devices on the network
     # - port=5000 is the default Flask port
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    try:
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    except Exception as e:
+        if e.errno == 10038:
+            print("Error: Another instance of the server is already running.")
+        else:
+            print(f"Error starting Flask server: {str(e)}")
