@@ -9,6 +9,14 @@ from flask import Flask, request, jsonify, send_from_directory
 from src.app import RAGApplication, DatabaseChatMemory
 import os
 import uuid
+import socket
+import sys
+import atexit
+import signal
+from werkzeug.serving import is_running_from_reloader
+
+# Global variable to track server instance
+server = None
 
 # Initialize Flask application with templates directory
 app = Flask(__name__, template_folder='templates')
@@ -127,20 +135,54 @@ def export_knowledge():
         print(f"Error exporting knowledge base: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+def create_app():
+    """Create and configure the Flask application."""
+    return app
+
+def is_port_in_use(port):
+    """Check if a port is already in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost', port)) == 0
+
+def cleanup():
+    """Clean up resources before exiting."""
+    global server
+    if server:
+        try:
+            server.shutdown()
+            print("\nServer has been shut down gracefully.")
+        except Exception as e:
+            print(f"Error during server shutdown: {e}")
+
 if __name__ == '__main__':
     """
     Main entry point for the Flask application.
     Starts the development server on all available network interfaces.
     """
+    # Register cleanup function
+    atexit.register(cleanup)
+    signal.signal(signal.SIGINT, lambda signum, frame: sys.exit(0))
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(0))
+
+    PORT = 5000
+    
+    if is_port_in_use(PORT):
+        print(f"Error: Port {PORT} is already in use. Please close any other instances.")
+        sys.exit(1)
+
     print("Starting Flask server...")
-    # Run the Flask development server
-    # - debug=True enables auto-reload and debug mode
-    # - host='0.0.0.0' makes the server accessible from other devices on the network
-    # - port=5000 is the default Flask port
+    
     try:
-        app.run(debug=True, host='0.0.0.0', port=5000)
-    except Exception as e:
-        if e.errno == 10038:
-            print("Error: Another instance of the server is already running.")
+        # Use the development server for now
+        app.run(debug=True, host='0.0.0.0', port=PORT, use_reloader=False)
+    except OSError as e:
+        if e.errno == 10038 or '10038' in str(e):
+            print("\nSocket error: The server socket was closed unexpectedly.")
+            print("This can happen if the server was restarted too quickly.")
+            print("Please wait a moment and try again.")
         else:
-            print(f"Error starting Flask server: {str(e)}")
+            print(f"\nServer error: {e}")
+    except Exception as e:
+        print(f"\nUnexpected error: {e}")
+    finally:
+        cleanup()
