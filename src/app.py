@@ -9,7 +9,7 @@ from datetime import datetime
 from PyPDF2 import PdfReader
 from langchain.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
-from src.vectordb import VectorDB
+from .vectordb import VectorDB
 from dotenv import load_dotenv
 
 # Load environment variables
