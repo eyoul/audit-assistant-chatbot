@@ -1,0 +1,15 @@
+[
+    {
+      "question": "What are SOX 404 control weaknesses?",
+      "contexts": [["Sample chunk from SOX.pdf: Internal controls must prevent material misstatements..."]],
+      "answer": "Based on retrieved context, common weaknesses include inadequate segregation of duties.",
+      "ground_truth": "SOX 404 requires effective internal controls; weaknesses like poor access controls lead to risks."
+    },
+    {
+      "question": "Flag fraud risks in expense reports.",
+      "contexts": [["From Expenses.pdf: Duplicate invoices over $5k indicate potential fraud..."]],
+      "answer": "Risks include duplicates >$5k; verify approvals.",
+      "ground_truth": "Expense fraud often involves duplicates or unapproved claims."
+    }
+  ]
+  
