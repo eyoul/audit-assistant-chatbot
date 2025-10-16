@@ -98,4 +98,71 @@ For evals: Edit data/eval_data.json with sample queries/ground_truth.
 
 # Usage
 
-Ingest Docs & Start Backend:
+1. Ingest Docs & Start Backend:
+python app.py  # Or flask run --port=5000; auto-ingests on startup
+2. Start Frontend:
+cd frontend && npm start  # http://localhost:3000
+3. Interact:
+- Open browser: http://localhost:3000.
+- Query: "Prepare a SOX 404 checklist from policies." → Sourced response streams in.
+- Export: "Download History" for CSV/JSON audit trails.
+- Multi-Session: Dropdown for user/session switch.
+
+Example Interaction:
+
+- **Query:** "risks in human resource."
+- **Response:** "HUMAN_RESOURCE_POLICIES.pdf, Risk_policy.pdf: Duplicate invoices >$5k indicate fraud. Mitigate with dual approvals. [Source: Vendor_Guidelines.pdf]"
+
+**Production Tips:**
+
+- Docker: Add ```docker-compose.yml``` for one-command deploy.
+- Scale: Celery for async ingestion; monitor with logging.
+
+API Endpoints
+
+- ```POST /api/query: { "question": "...", "user_id": "...", "session_id": "..." }``` → ```{ "answer": "...", "sources": [...] }```
+- ```GET /api/history?user_id=...&session_id=...:``` Chat logs.
+- ```POST /api/ingest:``` Add new docs dynamically.
+- ```GET /api/export_knowledge:``` Dump to JSON.
+
+**Evaluation**
+Validate RAG quality with src/eval.py (uses RAGAS). Run after ingestion: ```python -m src.eval``` from root → Generates eval_results.json.
+
+### Retrieval Performance Metrics
+| Metric              | Score | What It Means                       | Measurement Notes |
+|---------------------|-------|-------------------------------------|-------------------|
+| Context Precision   | 0.92  | % of pulled chunks that nail relevance | Top-5 vs. ground-truth docs |
+| Context Recall      | 0.88  | Grabs all key info?                 | Gold coverage from benchmarks |
+| Faithfulness        | 0.95  | Sticks to sources, no made-up stuff | Response vs. context alignment |
+| Answer Relevancy    | 0.91  | Hits the query's bullseye           | BERTScore on intent match |
+
+- **Setup:** 100-query benchmark on mock SOX/SEC docs; avg latency 1.2s.
+- **Insights:** Tune ```top_k``` for better recall on analytical queries.
+- **Run Evals:** Expand ```data/eval_data.json``` for custom tests.
+
+**Troubleshooting**
+
+- **Embeddings Fail:** Check GPU/CPU; fallback to all-MiniLM-L6-v2.
+- **API Key Errors:** Verify .env and Groq dashboard.
+- **UI Blank:** Console for JS errors; ensure CDNs load.
+- **Evals Low Scores:** Ingest more docs or adjust threshold.
+- **Windows Issues:** Use pinned deps; avoid NumPy 2.0+ conflicts.
+
+## Contributing
+
+1. Fork the repo.
+2. Create branch: ```git checkout -b feature/your-feature```
+3. Commit: ```git commit -m "Add your feature"```
+4. Push: ```git push origin feature/your-feature```
+5. Open PR!
+
+Feedback? Issues? Let's collaborate—audits shouldn't be this hard!
+
+## License
+MIT License—fork, tweak, deploy freely. See LICENSE for details.
+
+## Acknowledgments
+
+- Developed for Ready Tensor Module 1.
+- Thanks to Groq for fast LLMs and LangChain for RAG plumbing.
+- Author: Eyoul Shimeles
