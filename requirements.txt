@@ -137,3 +137,4 @@ wrapt==1.17.3
 zipp==3.23.0
 zstandard==0.24.0
 ragas==0.1.9
+datasets==2.14.6
