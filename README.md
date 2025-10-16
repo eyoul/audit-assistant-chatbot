@@ -35,6 +35,7 @@ Perfect for auditors juggling dense regs (SOX, GDPR). [Live Demo](link-if-any) |
 - **Testing**: 95% safe on adversarial benchmarks; integrates with evals for ongoing checks.
 
 ## Project Structure
+```
 auditguard-chatbot/
 ├── src/
 │   ├── app.py              # Flask app, LLM init, query pipeline, history mgmt
@@ -52,7 +53,7 @@ auditguard-chatbot/
 ├── eval_results.json       # Eval outputs (generated)
 ├── README.md               # This file
 └── LICENSE                 # MIT
-
+```
 ## Requirements
 - Python 3.10+ (tested on Windows for NumPy/PyTorch compatibility)
 - Node.js 18+ (for React frontend)
@@ -94,3 +95,7 @@ cd ..
 
 Add audit files to ./data/ (e.g., SOX_policy.pdf).
 For evals: Edit data/eval_data.json with sample queries/ground_truth.
+
+# Usage
+
+Ingest Docs & Start Backend:
