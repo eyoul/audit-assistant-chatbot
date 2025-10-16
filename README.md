@@ -159,8 +159,9 @@ Validate RAG quality with src/eval.py (uses RAGAS). Run after ingestion: ```pyth
 
 Feedback? Issues? Let's collaborate—audits shouldn't be this hard!
 
+## License(@MIT)
 ## License
-MIT License—fork, tweak, deploy freely. See LICENSE for details.
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
