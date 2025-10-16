@@ -165,6 +165,6 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 
 ## Acknowledgments
 
-- Developed for Ready Tensor Module 1.
-- Thanks to Groq for fast LLMs and LangChain for RAG plumbing.
-- Author: Eyoul Shimeles
+- Developed for Ready [Tensor]( https://app.readytensor.ai/) Module 1.
+- Thanks to [Groq](https://groq.com/) for fast LLMs and [LangChain](https://langchain.com/) for RAG plumbing.
+- Author: [Eyoul Shimeles](https://github.com/eyoul)
