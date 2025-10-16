@@ -1,6 +1,6 @@
 # AuditGuard: RAG-Powered Chatbot for Audit Compliance
 
-![AuditGuard Demo](screenshots/demo.png) <!-- Replace with actual screenshot path -->
+![AuditGuard Demo](templates/demo.png) <!-- Replace with actual screenshot path -->
 
 ## Overview
 AuditGuard is an open-source AI chatbot designed to supercharge audit workflows. Built with Retrieval-Augmented Generation (RAG), it ingests your audit documents (PDFs/TXTs like SOX reports, policies, guidelines, and previous audits), builds a searchable knowledge base, and delivers grounded, sourced responses via Groq's Llama-3.3-70B-Versatile model. Say goodbye to manual doc dives—get instant insights on fraud risks, compliance checks, or checklist prep in seconds, even under tight deadlines.
