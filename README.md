@@ -111,7 +111,8 @@ cd frontend && npm start  # http://localhost:3000
 Example Interaction:
 
 - **Query:** "risks in human resource."
-- **Response:** "HUMAN_RESOURCE_POLICIES.pdf, Risk_policy.pdf: Duplicate invoices >$5k indicate fraud. Mitigate with dual approvals. [Source: Vendor_Guidelines.pdf]"
+- **Response:** "[Risk management is applied to human resource functions, including recruitment, policy development, and implementation, but specific risks are not explicitly mentioned in the provided document.
+**Sources**: Risk_policy.pdf, HUMAN_RESOURCE_POLICIES.pdf, HUMAN_RESOURCE_POLICIES.pdf]"
 
 **Production Tips:**
 
